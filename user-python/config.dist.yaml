@@ -1,0 +1,11 @@
+port: 8443
+database:
+  migration:
+    path: migrations
+  connection:
+    write: postgres://postgres:password@localhost:5432/database
+    read: postgres://postgres:password@localhost:5432/database
+tracer:
+  name: user.backend
+  agent: localhost:6831
+  collector: http://localhost:14278/api/traces
