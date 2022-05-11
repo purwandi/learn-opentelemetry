@@ -36,6 +36,18 @@ async def get(request: Request, id: int):
         except Exception as e:
             logger.error("httpclient", message=str(e))
 
+
+        try:
+            async with HttpClient.instance().get(
+                "http://localhost:8444/location/1"
+            ) as response:
+                if response.status != 200:
+                    logger.info("httpclient", message="httpclient is not healthy")
+                else:
+                    logger.info("httpclient", message="httpclient is healthy")
+        except Exception as e:
+            logger.error("httpclient", message=str(e))
+
         user = await user_repository.find(db=request.app.state.dbr, id=id)
         return JSONResponse(content=jsonable_encoder(user), status_code=200)
 

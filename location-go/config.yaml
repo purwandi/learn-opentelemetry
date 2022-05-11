@@ -1,0 +1,5 @@
+port: 8444
+tracer:
+  name: location.backend
+  agent: localhost:6841
+  collector: http://localhost:14278/api/traces
