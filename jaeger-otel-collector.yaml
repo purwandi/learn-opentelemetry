@@ -1,8 +1,15 @@
+# https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver
 receivers:
   jaeger:
     protocols:
       thrift_http:
-        endpoint: "0.0.0.0:14278"
+        endpoint: 0.0.0.0:14278
+      thrift_compact:
+        endpoint: 0.0.0.0:6841
+        queue_size: 5_000
+        max_packet_size: 1_000_000
+        workers: 50
+        # socket_buffer_size: 8_388_608
 
   # Dummy receiver that's never used, because a pipeline is required to have one.
   otlp/spanmetrics:
