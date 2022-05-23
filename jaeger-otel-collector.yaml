@@ -2,6 +2,8 @@
 receivers:
   jaeger:
     protocols:
+      grpc:
+        endpoint: 0.0.0.0:14251
       thrift_http:
         endpoint: 0.0.0.0:14278
       thrift_compact:

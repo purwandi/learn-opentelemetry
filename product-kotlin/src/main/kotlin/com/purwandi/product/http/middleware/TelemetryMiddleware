@@ -1,0 +1,109 @@
+package com.purwandi.product.http.middleware;
+
+import com.sun.net.httpserver.HttpExchange
+import java.io.IOException;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.util.function.Function;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.http.HttpHeaders;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.TextMapGetter
+import io.opentelemetry.context.Context;
+import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
+
+
+
+//var getter: TextMapGetter<HttpExchange> = HttpExchangeTextMapGetter()
+
+//val getter: TextMapGetter<HttpServletRequest>
+//  get() = TextMapGetter<> {
+//    fun keys(carrier: HttpServletRequest): Iterable<String> {
+//      val set = HashSet<String>()
+//      val headerNames: Enumeration<String> = carrier.getHeaderNames()
+//      while (headerNames.hasMoreElements()) {
+//        set.add(headerNames.nextElement())
+//      }
+//      return set
+//    }
+//
+//    fun get(carrier: HttpServletRequest, key: String): String? {
+//      val headerNames = carrier.getHeaderNames()
+//      while (headerNames.hasMoreElements()) {
+//        val headerName: String = headerNames.nextElement();
+//        System.out.println("headerNames.nextElement(): " + headerName);
+//        if (headerName.equals(key)) {
+//          val headerValue : String = carrier.getHeader(headerName);
+//          System.out.println("headerValue): " + headerValue);
+//          return headerValue;
+//        }
+//      }
+//      return null
+//    }
+//  }
+
+
+// val getter: TextMapGetter<HttpHeaders> = TextMapGetter<HttpHeaders>() {
+
+// }
+
+
+// https://github.dev/open-telemetry/opentelemetry-java/tree/main/sdk/trace/src/main/java/io/opentelemetry/sdk/trace
+// https://stackoverflow.com/questions/67692618/in-opentelemetry-not-able-to-get-parent-span
+@Component
+class TelemetryMiddleware : OncePerRequestFilter() {
+
+  @Throws(ServletException::class, IOException::class)
+  override fun doFilterInternal(httpRequest: HttpServletRequest, httpResponse: HttpServletResponse, filterChain: FilterChain) {
+
+    // val headers: MutableMap<String, String> = request.
+    // headers.remove("Authorization")
+
+    val tracer : Tracer = GlobalOpenTelemetry.get().getTracer("opentelemetry-java-sdk")
+    val prop: TextMapPropagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+
+     ctx = prop.extract(Context.current(), httpRequest, HttpExchangeTextMapGetter(httpRequest))
+
+    // val jaegerPropagator = JaegerPropagator.getInstance()
+    // jaegerPropagator.inject(context, carrier, setter)
+
+    val span: Span = tracer
+      .spanBuilder(httpRequest.getRequestURI()!! + " " + httpRequest.getMethod())
+      // .setParent()
+      .startSpan()
+
+    span.makeCurrent()
+
+    httpRequest.setAttribute("spanTrace", span)
+
+    println("filter request")
+    filterChain.doFilter(httpRequest, httpResponse)
+    println("next request")
+    span.end()
+  }
+}
+
+fun SpanContext(context: Context): SpanContext {
+  return Span.fromContext(context).getSpanContext()
+}
+
+fun WithSpanContext(spanContext: SpanContext, context: Context): Context {
+  return context.with(Span.wrap(spanContext))
+}

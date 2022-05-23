@@ -2,6 +2,7 @@ version: '3'
 services:
   database:
     image: postgres:13.5-alpine
+    container_name: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -12,6 +13,7 @@ services:
   # https://www.jaegertracing.io/docs/1.33/deployment/
   jaeger:
     image: jaegertracing/all-in-one:1.33.0
+    container_name: jaeger
     volumes:
       - ./jaeger-ui.json:/etc/jaeger/jaeger-ui.json
     command: --query.ui-config /etc/jaeger/jaeger-ui.json
@@ -27,17 +29,107 @@ services:
       - 16685:16685     # Protobuf/gRPC QueryService
   prometheus:
     image: prom/prometheus:v2.35.0
+    container_name: prometheus
     volumes:
       - ./jaeger-prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
   otel_collector:
     image: otel/opentelemetry-collector-contrib:0.50.0
+    container_name: otel_collector
     volumes:
       - ./jaeger-otel-collector.yaml:/etc/otelcol/otel-collector-config.yml
     command: --config /etc/otelcol/otel-collector-config.yml
     depends_on:
       - jaeger
     ports:
+      - 14251:14250
       - 14278:14278
       - 6841:6841/udp
+
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
+  #   container_name: elastic
+  #   environment:
+  #     ES_JAVA_OPTS: "-Xmx512m -Xms512m"
+  #     discovery.type: single-node
+  #   ports:
+  #     - 9200:9200
+  #     - 9300:9300
+  
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:8.2.0
+  #   container_name: kibana
+  #   environment:
+  #     ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+  #   ports:
+  #     - 5601:5601
+
+  # zookeeper:
+  #   image: zookeeper:3.4.9
+  #   hostname: zookeeper
+  #   container_name: zookeeper
+  #   ports:
+  #     - 2181:2181
+  #   environment:
+  #       ZOO_MY_ID: 1
+  #       ZOO_PORT: 2181
+  #       ZOO_SERVERS: server.1=zookeeper:2888:3888
+  # kafka1:
+  #   image: confluentinc/cp-kafka:6.2.4
+  #   hostname: kafka1
+  #   container_name: kafka1
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka1:19092,LISTENER_DOCKER_EXTERNAL://localhost:9092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+  #     KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+  #   ports:
+  #     - 9092:9092
+  #   depends_on:
+  #     - zookeeper
+
+  # kafka2:
+  #   image: confluentinc/cp-kafka:6.2.4
+  #   hostname: kafka2
+  #   container_name: kafka2
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka2:19093,LISTENER_DOCKER_EXTERNAL://localhost:9093
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+  #     KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  #     KAFKA_BROKER_ID: 2
+  #     KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+  #   ports:
+  #     - 9093:9093
+  #   depends_on:
+  #     - zookeeper
+
+  # kafka3:
+  #   image: confluentinc/cp-kafka:6.2.4
+  #   hostname: kafka3
+  #   container_name: kafka3
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka3:19094,LISTENER_DOCKER_EXTERNAL://localhost:9094
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+  #     KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+  #     KAFKA_BROKER_ID: 3
+  #     KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+  #   ports:
+  #     - 9094:9094
+  #   depends_on:
+  #     - zookeeper
+
+  # kafka-ui:
+  #   image: provectuslabs/kafka-ui
+  #   container_name: kafka-ui
+  #   ports:
+  #     - 8080:8080
+  #   restart: always
+  #   environment:
+  #     - KAFKA_CLUSTERS_0_NAME=local
+  #     - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:19092,kafka2:19093,kafka3:19094
+  #     - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181

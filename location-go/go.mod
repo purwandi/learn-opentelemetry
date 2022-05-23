@@ -5,6 +5,9 @@ go 1.16
 require (
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/labstack/gommon v0.3.1
+	github.com/segmentio/kafka-go v0.4.31
+	github.com/shopspring/decimal v1.3.1
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
 	github.com/valyala/fasttemplate v1.2.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.32.0

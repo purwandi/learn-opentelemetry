@@ -1,0 +1,4 @@
+port: 8444
+tracer:
+  name: product.backend
+  collector: http://localhost:14278/api/traces
